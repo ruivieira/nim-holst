@@ -1,6 +1,10 @@
 import json
 import sequtils
 import options
+from strutils import join
+import strformat
+import base64
+import os
 
 type KernelSpec = object
   display_name*: string
@@ -18,10 +22,56 @@ type Cell = object
   source*: seq[string]
   outputs*: seq[string]
   image_data*: Option[string]
+  text_data*: Option[string]
+  stdout*: Option[seq[string]]
+
+proc has_image_output(cell: Cell): bool =
+  return cell.image_data.isSome
+
+proc has_text_output(cell: Cell): bool =
+  return cell.text_data.isSome
+
+proc has_stdout_output(cell: Cell): bool =
+  return cell.stdout.isSome
+
 
 type JupyterNotebook = object
   metadata*: Metadata
   cells*: seq[Cell]
+
+proc markdown*(notebook: JupyterNotebook): string =
+  var image_counter = 1
+  var contents = ""
+  for cell in notebook.cells:
+    if cell.kind == CellKind.Markdown:
+      contents &= cell.source.join() & "\n"
+      contents &= "\n"
+    elif cell.kind == CellKind.Code:
+      contents &= "```\n"
+      contents &= cell.source.join() & "\n"
+      contents &= "```\n"
+      if cell.has_image_output():
+        contents &= "\n"
+        contents &= fmt"![image-{image_counter}](./images/image-{image_counter}.png)" & "\n"
+        contents &= "\n"
+        image_counter += 1
+      if cell.has_stdout_output():
+        contents &= "```\n"
+        contents &= cell.stdout.get.join() & "\n"
+        contents &= "```\n"
+
+
+  return contents
+
+proc export_images*(notebook: JupyterNotebook, path:string = "./images", prefix: string = "image") =
+  var image_counter = 1
+  if not dirExists(path):
+    createDir(path)
+  for cell in notebook.cells:
+    if cell.has_image_output():
+      let image_data = decode(cell.image_data.get)
+      writeFile(fmt"{path}/{prefix}-{image_counter}.png", image_data)
+      image_counter += 1
 
 proc read(path: string): JupyterNotebook =
   let source = readFile(path)
@@ -40,6 +90,8 @@ proc read(path: string): JupyterNotebook =
   
   for cell in jsonNode["cells"]:
     var image_data = none(string)
+    var text_data = none(string)
+    var stdout = none(seq[string])
     let cell_type = cell["cell_type"].getStr
     let cell_source = cell["source"].elems.map(proc(x: JsonNode):string = x.getStr)
     if cell_type == "markdown":
@@ -53,32 +105,19 @@ proc read(path: string): JupyterNotebook =
       if data.len > 0:
         let images = data.filter(proc(x: JsonNode): bool = x.hasKey("image/png"))
         if images.len > 0:
-        # if images.len >0:
           image_data = some(images[0]["image/png"].getStr)
+        let text = data.filter(proc(x: JsonNode): bool = x.hasKey("text/plain"))
+        if text.len > 0:
+          text_data = some(text[0]["text/plain"].getStr)
+      let named_output = outputs.elems.filter(proc(output: JsonNode):bool = output.hasKey("name") and output["name"].getStr == "stdout")
+      if named_output.len > 0:
+        stdout = some(named_output[0]["text"].elems.map(proc(x:JsonNode):string = x.getStr))
 
       # finally create the code cell
-      let c = Cell(kind: CellKind.Code, source: cell_source, image_data: image_data)
+      let c = Cell(kind: CellKind.Code, source: cell_source, image_data: image_data, text_data: text_data, stdout: stdout)
       cells.add(c)
 
   let notebook = JupyterNotebook(metadata: metadata,
                                  cells: cells)
 
-  return notebook 
-  
-
-when isMainModule:
-  echo("hello")
-  let notebook = read("./SVM.ipynb")
-
-  echo notebook.metadata.kernelspec.display_name
-  echo notebook.metadata.kernelspec.language
-  echo notebook.metadata.kernelspec.name
-
-  for cell in notebook.cells:
-    # echo(cell.kind)
-    # echo($cell.source)
-    echo(cell.image_data)
-
-
-  # for cell in jsonNode["cells"]:
-  #   echo cell["cell_type"].getStr
+  return notebook
