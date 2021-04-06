@@ -6,6 +6,45 @@
 
 A parser for Jupyter notebooks.
 
+## setup
+
+Add `holst` to your `nimble` project:
+
+```nim
+requires "holst"
+```
+
+and run `nimble install`
+
+## examples
+
+Load and parse a Jupyter notebook in `/tmp/foo.ipynb`:
+
+```nim
+import holst
+
+let notebook = read("/tmp/foo.ipynb")
+```
+
+Get the kernel's metadata
+
+```nim
+echo notebook.metadata.kernelspec.language # => python
+echo notebook.metadata.kernelspec.name # => Python 3
+```
+
+Export the notebook as markdown
+
+```nim
+let md = notebook.markdown()
+```
+
+Images are rendered as links in Markdown, you can export the image data to files with
+
+```nim
+notebook.export_images(path="./images", prefix="image")
+```
+
 ## compatibility
 
 `holst` works with Jupyter notebooks with format 4+.
