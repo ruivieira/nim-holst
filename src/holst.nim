@@ -38,11 +38,15 @@ proc read(path: string): JupyterNotebook =
   
   for cell in jsonNode["cells"]:
     let cell_type = cell["cell_type"].getStr
+    let cell_source = cell["source"].elems.map(proc(x: JsonNode):string = x.getStr)
     if cell_type == "markdown":
-      let c = Cell(kind: CellKind.Markdown)
+      let c = Cell(kind: CellKind.Markdown, source: cell_source)
       cells.add(c)
     elif cell_type == "code":
-      let c = Cell(kind: CellKind.Code)
+      # parsing the outputs of a code cell is not simple...
+
+      # finally create the code cell
+      let c = Cell(kind: CellKind.Code, source: cell_source)
       cells.add(c)
 
   let notebook = JupyterNotebook(metadata: metadata,
@@ -61,6 +65,7 @@ when isMainModule:
 
   for cell in notebook.cells:
     echo(cell.kind)
+    echo($cell.source)
 
 
   # for cell in jsonNode["cells"]:
