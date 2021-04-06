@@ -11,6 +11,14 @@ type Metadata = object
 type JupyterNotebook = object
   metadata*: Metadata
 
+type CellKind = enum
+  Markdown = "markdown", Code = "code"
+
+type Cell = object
+  kind*: CellKind
+  source*: seq[string]
+  outputs*: seq[string]
+
 
 proc read(path: string): JupyterNotebook =
   let source = readFile(path)
