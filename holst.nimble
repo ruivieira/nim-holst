@@ -2,11 +2,10 @@
 
 version       = "0.1.0"
 author        = "Rui Vieira"
-description   = "Nim template"
+description   = "A Jupyter notebook parser"
 license       = "AGPL-3.0-only"
 srcDir        = "src"
-installExt    = @["nim"]
-bin           = @["nim_template"]
+bin           = @["holst"]
 
 
 # Dependencies
