@@ -1,6 +1,6 @@
 [![CI](https://github.com/ruivieira/nim-holst/actions/workflows/test.yml/badge.svg)](https://github.com/ruivieira/nim-holst/actions/workflows/test.yml) [![builds.sr.ht status](https://builds.sr.ht/~ruivieira/nim-holst/commits/.build.yml.svg)](https://builds.sr.ht/~ruivieira/nim-holst/commits/.build.yml?)
 
-# nim-template
+# nim-holst
 
 ![](./docs/holst.png)
 

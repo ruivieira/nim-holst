@@ -7,17 +7,21 @@ import base64
 import os
 
 type KernelSpec = object
+  ## This type contains a description of a kernel specification
   display_name*: string
   language*: string
   name*: string
 
 type Metadata = object
+  ## This type contains the notebook's metadata
   kernelspec*: KernelSpec
 
 type CellKind = enum
+  ## Cell type enumeration
   Markdown = "markdown", Code = "code"
 
 type Cell = object
+  ## This type contains cell's data
   kind*: CellKind
   source*: seq[string]
   outputs*: seq[string]
@@ -36,6 +40,7 @@ proc has_stdout_output(cell: Cell): bool =
 
 
 type JupyterNotebook = object
+  ## This type contains the notebook's data
   metadata*: Metadata
   cells*: seq[Cell]
 
