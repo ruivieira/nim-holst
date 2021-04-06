@@ -1,4 +1,5 @@
 import json
+import sequtils
 
 type KernelSpec = object
   display_name*: string
@@ -8,9 +9,6 @@ type KernelSpec = object
 type Metadata = object
   kernelspec*: KernelSpec
 
-type JupyterNotebook = object
-  metadata*: Metadata
-
 type CellKind = enum
   Markdown = "markdown", Code = "code"
 
@@ -19,6 +17,9 @@ type Cell = object
   source*: seq[string]
   outputs*: seq[string]
 
+type JupyterNotebook = object
+  metadata*: Metadata
+  cells*: seq[Cell]
 
 proc read(path: string): JupyterNotebook =
   let source = readFile(path)
@@ -33,7 +34,19 @@ proc read(path: string): JupyterNotebook =
 
   let metadata = Metadata(kernelspec: kernelspec)
 
-  let notebook = JupyterNotebook(metadata: metadata)
+  var cells = newSeq[Cell]()
+  
+  for cell in jsonNode["cells"]:
+    let cell_type = cell["cell_type"].getStr
+    if cell_type == "markdown":
+      let c = Cell(kind: CellKind.Markdown)
+      cells.add(c)
+    elif cell_type == "code":
+      let c = Cell(kind: CellKind.Code)
+      cells.add(c)
+
+  let notebook = JupyterNotebook(metadata: metadata,
+                                 cells: cells)
 
   return notebook
   
@@ -45,6 +58,9 @@ when isMainModule:
   echo notebook.metadata.kernelspec.display_name
   echo notebook.metadata.kernelspec.language
   echo notebook.metadata.kernelspec.name
+
+  for cell in notebook.cells:
+    echo(cell.kind)
 
 
   # for cell in jsonNode["cells"]:
