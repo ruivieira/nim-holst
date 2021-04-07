@@ -1,10 +1,11 @@
 # Package
 
-version       = "0.1.1"
+version       = "0.1.2"
 author        = "Rui Vieira"
 description   = "A Jupyter notebook parser"
 license       = "AGPL-3.0-only"
 srcDir        = "src"
+installExt    = @["nim"]
 bin           = @["holst"]
 
 
