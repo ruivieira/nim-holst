@@ -6,21 +6,21 @@ import strformat
 import base64
 import os
 
-type KernelSpec = object
+type KernelSpec* = object
   ## This type contains a description of a kernel specification
   display_name*: string
   language*: string
   name*: string
 
-type Metadata = object
+type Metadata* = object
   ## This type contains the notebook's metadata
   kernelspec*: KernelSpec
 
-type CellKind = enum
+type CellKind* = enum
   ## Cell type enumeration
   Markdown = "markdown", Code = "code"
 
-type Cell = object
+type Cell* = object
   ## This type contains cell's data
   kind*: CellKind
   source*: seq[string]
@@ -29,17 +29,17 @@ type Cell = object
   text_data*: Option[string]
   stdout*: Option[seq[string]]
 
-proc has_image_output(cell: Cell): bool =
+proc has_image_output*(cell: Cell): bool =
   return cell.image_data.isSome
 
-proc has_text_output(cell: Cell): bool =
+proc has_text_output*(cell: Cell): bool =
   return cell.text_data.isSome
 
-proc has_stdout_output(cell: Cell): bool =
+proc has_stdout_output*(cell: Cell): bool =
   return cell.stdout.isSome
 
 
-type JupyterNotebook = object
+type JupyterNotebook* = object
   ## This type contains the notebook's data
   metadata*: Metadata
   cells*: seq[Cell]
@@ -68,7 +68,8 @@ proc markdown*(notebook: JupyterNotebook): string =
 
   return contents
 
-proc export_images*(notebook: JupyterNotebook, path:string = "./images", prefix: string = "image") =
+proc export_images*(notebook: JupyterNotebook, path: string = "./images",
+    prefix: string = "image") =
   var image_counter = 1
   if not dirExists(path):
     createDir(path)
@@ -78,7 +79,7 @@ proc export_images*(notebook: JupyterNotebook, path:string = "./images", prefix:
       writeFile(fmt"{path}/{prefix}-{image_counter}.png", image_data)
       image_counter += 1
 
-proc read(path: string): JupyterNotebook =
+proc read*(path: string): JupyterNotebook =
   let source = readFile(path)
   let jsonNode = parseJson(source)
 
@@ -92,13 +93,14 @@ proc read(path: string): JupyterNotebook =
   let metadata = Metadata(kernelspec: kernelspec)
 
   var cells = newSeq[Cell]()
-  
+
   for cell in jsonNode["cells"]:
     var image_data = none(string)
     var text_data = none(string)
     var stdout = none(seq[string])
     let cell_type = cell["cell_type"].getStr
-    let cell_source = cell["source"].elems.map(proc(x: JsonNode):string = x.getStr)
+    let cell_source = cell["source"].elems.map(proc(
+        x: JsonNode): string = x.getStr)
     if cell_type == "markdown":
       let c = Cell(kind: CellKind.Markdown, source: cell_source)
       cells.add(c)
@@ -106,7 +108,9 @@ proc read(path: string): JupyterNotebook =
       # parsing the outputs of a code cell is not simple...
       ## check if any of the output items has a key called "data"
       let outputs = cell["outputs"]
-      let data = outputs.elems.filter(proc(output: JsonNode):bool = output.hasKey("data")).map(proc(x:JsonNode):JsonNode = x["data"])
+      let data = outputs.elems.filter(proc(
+          output: JsonNode): bool = output.hasKey("data")).map(proc(
+          x: JsonNode): JsonNode = x["data"])
       if data.len > 0:
         let images = data.filter(proc(x: JsonNode): bool = x.hasKey("image/png"))
         if images.len > 0:
@@ -114,12 +118,16 @@ proc read(path: string): JupyterNotebook =
         let text = data.filter(proc(x: JsonNode): bool = x.hasKey("text/plain"))
         if text.len > 0:
           text_data = some(text[0]["text/plain"].getStr)
-      let named_output = outputs.elems.filter(proc(output: JsonNode):bool = output.hasKey("name") and output["name"].getStr == "stdout")
+      let named_output = outputs.elems.filter(proc(
+          output: JsonNode): bool = output.hasKey("name") and output[
+          "name"].getStr == "stdout")
       if named_output.len > 0:
-        stdout = some(named_output[0]["text"].elems.map(proc(x:JsonNode):string = x.getStr))
+        stdout = some(named_output[0]["text"].elems.map(proc(
+            x: JsonNode): string = x.getStr))
 
       # finally create the code cell
-      let c = Cell(kind: CellKind.Code, source: cell_source, image_data: image_data, text_data: text_data, stdout: stdout)
+      let c = Cell(kind: CellKind.Code, source: cell_source,
+          image_data: image_data, text_data: text_data, stdout: stdout)
       cells.add(c)
 
   let notebook = JupyterNotebook(metadata: metadata,
