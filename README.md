@@ -48,7 +48,10 @@ let md = notebook.markdown()
 Images are rendered as links in Markdown, you can export the image data to files with
 
 ```nim
-notebook.export_images(path="./images", prefix="image")
+notebook.image_prefix = "notebook-img"
+notebook.image_rel_path = "./my_images"
+notebook.image_dest = "/tmp/html/my_images"
+notebook.export_images()
 ```
 
 ### iterating

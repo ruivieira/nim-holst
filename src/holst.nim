@@ -45,9 +45,14 @@ type JupyterNotebook* = object
   metadata*: Metadata
   cells*: seq[Cell]
   image_dest*: string
+  image_rel_path*:string
   image_prefix*: string
 
-proc build_image_path*(notebook: JupyterNotebook, image_counter: int): string =
+proc build_image_rel_path*(notebook: JupyterNotebook, image_counter: int): string =
+  let prefix = encodeUrl(notebook.image_prefix, usePlus=true)
+  joinPath(notebook.image_rel_path, fmt"{prefix}-{image_counter}.png" )
+
+proc build_image_abs_path*(notebook: JupyterNotebook, image_counter: int): string =
   let prefix = encodeUrl(notebook.image_prefix, usePlus=true)
   joinPath(notebook.image_dest, fmt"{prefix}-{image_counter}.png" )
 
@@ -65,7 +70,7 @@ proc markdown*(notebook: JupyterNotebook): string =
       contents &= "```\n"
       if cell.has_image_output():
         contents &= "\n"
-        let image_path = notebook.build_image_path(image_counter)
+        let image_path = notebook.build_image_rel_path(image_counter)
         contents &= fmt"![image-{image_counter}]({image_path})" & "\n"
         contents &= "\n"
         image_counter += 1
@@ -85,7 +90,7 @@ proc export_images*(notebook: JupyterNotebook) =
   for cell in notebook.cells:
     if cell.has_image_output():
       let image_data = decode(cell.image_data.get)
-      let image_path = notebook.build_image_path(image_counter)
+      let image_path = notebook.build_image_abs_path(image_counter)
       writeFile(image_path, image_data)
       image_counter += 1
 
@@ -143,6 +148,7 @@ proc read*(path: string): JupyterNotebook =
   let notebook = JupyterNotebook(metadata: metadata,
                                  cells: cells,
                                  image_dest: "./images",
-                                 image_prefix: "image")
+                                 image_prefix: "image",
+                                 image_rel_path: "./images")
 
   return notebook
