@@ -43,6 +43,12 @@ type JupyterNotebook* = object
   ## This type contains the notebook's data
   metadata*: Metadata
   cells*: seq[Cell]
+  image_dest*: string
+  image_prefix*: string
+
+proc build_image_path*(notebook: JupyterNotebook, image_counter: int): string =
+  joinPath(notebook.image_dest, fmt"{notebook.image_prefix}-{image_counter}.png" )
+
 
 proc markdown*(notebook: JupyterNotebook): string =
   var image_counter = 1
@@ -57,7 +63,8 @@ proc markdown*(notebook: JupyterNotebook): string =
       contents &= "```\n"
       if cell.has_image_output():
         contents &= "\n"
-        contents &= fmt"![image-{image_counter}](./images/image-{image_counter}.png)" & "\n"
+        let image_path = notebook.build_image_path(image_counter)
+        contents &= fmt"![image-{image_counter}]({image_path})" & "\n"
         contents &= "\n"
         image_counter += 1
       if cell.has_stdout_output():
@@ -68,15 +75,16 @@ proc markdown*(notebook: JupyterNotebook): string =
 
   return contents
 
-proc export_images*(notebook: JupyterNotebook, path: string = "./images",
-    prefix: string = "image") =
+
+proc export_images*(notebook: JupyterNotebook) =
   var image_counter = 1
-  if not dirExists(path):
-    createDir(path)
+  if not dirExists(notebook.image_dest):
+    createDir(notebook.image_dest)
   for cell in notebook.cells:
     if cell.has_image_output():
       let image_data = decode(cell.image_data.get)
-      writeFile(fmt"{path}/{prefix}-{image_counter}.png", image_data)
+      let image_path = notebook.build_image_path(image_counter)
+      writeFile(image_path, image_data)
       image_counter += 1
 
 proc read*(path: string): JupyterNotebook =
@@ -131,6 +139,8 @@ proc read*(path: string): JupyterNotebook =
       cells.add(c)
 
   let notebook = JupyterNotebook(metadata: metadata,
-                                 cells: cells)
+                                 cells: cells,
+                                 image_dest: "./images",
+                                 image_prefix: "image")
 
   return notebook
