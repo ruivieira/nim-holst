@@ -5,6 +5,7 @@ from strutils import join
 import strformat
 import base64
 import os
+import uri
 
 type KernelSpec* = object
   ## This type contains a description of a kernel specification
@@ -47,7 +48,8 @@ type JupyterNotebook* = object
   image_prefix*: string
 
 proc build_image_path*(notebook: JupyterNotebook, image_counter: int): string =
-  joinPath(notebook.image_dest, fmt"{notebook.image_prefix}-{image_counter}.png" )
+  let prefix = encodeUrl(notebook.image_prefix, usePlus=true)
+  joinPath(notebook.image_dest, fmt"{prefix}-{image_counter}.png" )
 
 
 proc markdown*(notebook: JupyterNotebook): string =

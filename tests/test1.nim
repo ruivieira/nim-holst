@@ -40,3 +40,7 @@ suite "Smoke tests":
   
   test "Get image full path":
     check(nb.build_image_path(1) == "my_images/notebook-img-1.png")
+
+  test "Get image full path with space":
+    nb.image_prefix = "This: is the image!"
+    check(nb.build_image_path(1) == "my_images/This%3A+is+the+image%21-1.png")
