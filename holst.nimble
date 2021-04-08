@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.2"
+version       = "0.1.3"
 author        = "Rui Vieira"
 description   = "A Jupyter notebook parser"
 license       = "AGPL-3.0-only"
